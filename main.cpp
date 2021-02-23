@@ -1,4 +1,4 @@
-#include "NestedGroups.h"
+#include "CascadeOfGroups.h"
 #include "TOG.h"
 #include "AcceptanceRejection.h"
 #include <fstream>
@@ -172,8 +172,8 @@ int main() {
 				std::vector<elementTOG *> SSACRItems;
 				std::vector<CBTNode *> treeItems;
 
-				//NestedGroups init
-				NestedGroups nest(pow(10, minlogratio), 1, N, R);
+				//CascadeOfGroups init
+				CascadeOfGroups nest(pow(10, minlogratio), 1, N, R);
 				if (doNested) for (int i = 0; i < N; i++) nestedItems.push_back(nest.addItem(i, rates.at(i)));
 
 				//AcceptanceRejection init

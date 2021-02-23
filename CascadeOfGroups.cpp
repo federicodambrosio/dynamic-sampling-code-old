@@ -2,7 +2,7 @@
 // Created by federicodambrosio on 17-3-17.
 //
 
-#include "NestedGroups.h"
+#include "CascadeOfGroups.h"
 
 item *NestedGroupsLarge::updateItem(item *it, double newRate) {
 	if (newRate == it->rate) return it;
@@ -392,7 +392,7 @@ void singleGroupLarge::deleteItem(item *it, int &counter) {
 }
 
 
-item *NestedGroups::updateItem(item *it, double newRate) {
+item *CascadeOfGroups::updateItem(item *it, double newRate) {
 	if (newRate == it->rate) return it;
 
 	_totalRate += newRate - it->rate;
@@ -422,7 +422,7 @@ item *NestedGroups::updateItem(item *it, double newRate) {
 	}
 }
 
-item *NestedGroups::extractItem(double random) {
+item *CascadeOfGroups::extractItem(double random) {
 	double totRate = _totalRate;
 	double randomRate = totRate * random;
 	int i = 0;
@@ -440,7 +440,7 @@ item *NestedGroups::extractItem(double random) {
 	}
 }
 
-item* NestedGroups::addItem(int payload, double rate) {
+item* CascadeOfGroups::addItem(int payload, double rate) {
 	if (rate <= 0) return NULL;
 
 	if (rate > _maxRate or rate < _minRate) {
@@ -457,7 +457,7 @@ item* NestedGroups::addItem(int payload, double rate) {
 
 }
 
-NestedGroups::NestedGroups(double minRate, double maxRate, int N, double ratio) {
+CascadeOfGroups::CascadeOfGroups(double minRate, double maxRate, int N, double ratio) {
 	rng.seed(time(0));
 	randExt = new std::uniform_real_distribution<double>(0,1);
 	_maxRate = maxRate;
@@ -475,7 +475,7 @@ NestedGroups::NestedGroups(double minRate, double maxRate, int N, double ratio) 
 
 }
 
-item *NestedGroups::extractItem(double random, RunningStats &deep, RunningStats &iter) {
+item *CascadeOfGroups::extractItem(double random, RunningStats &deep, RunningStats &iter) {
 	double totRate = _totalRate;
 	double randomRate = totRate * random;
 	int i = 0;
@@ -491,7 +491,7 @@ item *NestedGroups::extractItem(double random, RunningStats &deep, RunningStats 
 	}
 }
 
-item* NestedGroups::addItem(int payload, double rate, int &counter) {
+item* CascadeOfGroups::addItem(int payload, double rate, int &counter) {
 	counter++;
 	if (rate <= 0) return NULL;
 
@@ -513,7 +513,7 @@ item* NestedGroups::addItem(int payload, double rate, int &counter) {
 	return it;
 }
 
-item *NestedGroups::extractItem(double random, int &counter, int & randNumbers) {
+item *CascadeOfGroups::extractItem(double random, int &counter, int & randNumbers) {
 	double totRate = _totalRate;
 	counter++;
 	double randomRate = totRate * random;
@@ -541,7 +541,7 @@ item *NestedGroups::extractItem(double random, int &counter, int & randNumbers) 
 }
 
 
-item *NestedGroups::updateItem(item *it, double newRate, int &counter) {
+item *CascadeOfGroups::updateItem(item *it, double newRate, int &counter) {
 	counter++;
 	if (newRate == it->rate) return it;
 
@@ -586,7 +586,7 @@ item *NestedGroups::updateItem(item *it, double newRate, int &counter) {
 	}
 }
 
-item *NestedGroups::extractItem() {
+item *CascadeOfGroups::extractItem() {
 	double totRate = _totalRate;
 	double randomRate = totRate * randExt->operator()(rng);
 	int i = 0;
@@ -604,7 +604,7 @@ item *NestedGroups::extractItem() {
 	}
 }
 
-item *NestedGroups::extractItem(int &counter, int & randNumbers) {
+item *CascadeOfGroups::extractItem(int &counter, int & randNumbers) {
 	double totRate = _totalRate;
 	counter++;
 	double randomRate = totRate * randExt->operator()(rng);

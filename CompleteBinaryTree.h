@@ -2,8 +2,8 @@
 // Created by federicodambrosio on 20-12-16.
 //
 
-#ifndef CUADATOM_DYNAMICFLATTREE_H
-#define CUADATOM_DYNAMICFLATTREE_H
+#ifndef COMPLETE_BINARY_TREE_H
+#define COMPLETE_BINARY_TREE_H
 
 #include <iostream>
 #include <random>
@@ -91,4 +91,4 @@ public:
 	void print();                               //prints the tree to stdout
 };
 
-#endif //CUADATOM_DYNAMICFLATTREE_H
+#endif //COMPLETE_BINARY_TREE_H
