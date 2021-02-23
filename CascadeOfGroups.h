@@ -10,105 +10,96 @@
 #include <random>
 #include "RunningStats.hpp"
 
-struct item {
+struct elementCoG {
 	int groupId;
 	int moveId;
 	double rate;
-
 	int payload;
 
-	item(int pl, double r) : payload(pl), rate(r) {}
+	elementCoG(int pl, double r) : payload(pl), rate(r), moveId(-1),groupId(-1) {}
 };
 
 struct singleGroup {
-	std::vector<item *> items;
-	int N;
-	int groupId;
-	double totalRate;
-	double max;
-	double min;
+	std::vector<elementCoG *> elements;
+	int N;                                              //how many elements in group
+	double totalRate;                                   //sum of rate in the group
+	const int groupId;
+	const double max;
+	const double min;
 	std::mt19937 rng;
 	std::uniform_real_distribution<double> * randExt;
 
-
-	singleGroup(double _min, double _max, int group, int _N = 0) : max(_max), min(_min), groupId(group), N(0),
+	singleGroup(double _min, double _max, int group, int _n = 0) : max(_max), min(_min), groupId(group), N(_n),
 	                                                                    totalRate(0) {
-		if (_N > 0) items.reserve(_N);
-		rng.seed(time(0));
+		if (_n > 0) elements.reserve(_n);
+		rng.seed(time(nullptr));
 		randExt = new std::uniform_real_distribution<double>(0,1);
-
 	}
 
 	~singleGroup() {
 		for (int i = 0; i < N; i++) {
-			item * itt = items[i];
-			delete itt;
+			delete elements[i];
 		}
 		delete randExt;
 	}
 
-	item *extractItem();
+	elementCoG *extractElement();
 
-	item *extractItem(int & counter, int & randNumbers);
+	elementCoG *extractElement(int & counter, int & randNumbers);  //as above but # ops in counter and # iterations in
+																//randNumbers
+	elementCoG *extractElement(RunningStats & rs);                 //as above but # of iterations in rs
 
-	item *extractItem(RunningStats & rs);
+	elementCoG *addElement(elementCoG *it);
 
-	item *addItem(item *it);
+	elementCoG *addElement(elementCoG *it, int & counter);         //as above but # ops in counter
 
-	item *addItem(item *it, int & counter);
+	void updateElement(elementCoG *it, double newRate);
 
-	void updateItem(item *it, double newRate);
+	void updateElement(elementCoG *it, double newRate, int & counter); //as above but # ops in counter
 
-	void updateItem(item *it, double newRate, int & counter);
+	void deleteElement(elementCoG *it);
 
-	void deleteItem(item *it);
-
-	void deleteItem(item *it, int & counter);
-
+	void deleteElement(elementCoG *it, int & counter);             //as above but # ops in counter
 
 };
 
-class CascadeOfGroups {
-	int _N;
-	double _totalRate;
+class CascadeOfGroups {                                     //Section 3.4
+	int N;                                                  //how many elements in the whole structure
+	double _totalRate;                                      //sum of all rates
 	double _minRate;
 	double _maxRate;
-	double _ratio;
+	double _c;                                              //grouping constant
 	std::vector<singleGroup*> _groups;
 	std::mt19937 rng;
 	std::uniform_real_distribution<double> * randExt;
-
-
 	double _divBase;
 
 public:
-
-	CascadeOfGroups(double minRate, double maxRate, int N = 0, double ratio = 2.);
+	CascadeOfGroups(double minRate, double maxRate, int n_ = 0, double ratio = 2.);
 
 	~CascadeOfGroups() {
-		for (int i = 0; i < _groups.size(); i++) {
-			delete _groups[i];
+		for (auto & _group : _groups) {
+			delete _group;
 		}
 	}
 
-	item* addItem(int payload, double rate);
+	elementCoG* addElement(int payload, double rate);
 
-	item* addItem(int payload, double rate, int & counter);
+	elementCoG* addElement(int payload, double rate, int & counter);
 
-	item *extractItem(double random);
+	elementCoG *extractElement(double random);
 
-	item *extractItem(double random, int & counter, int & randNumbers);
+	elementCoG *extractElement(double random, int & counter, int & randNumbers);
 
-	item *extractItem();
+	elementCoG *extractElement();
 
-	item *extractItem(int & counter, int & randNumbers);
+	elementCoG *extractElement(int & counter, int & randNumbers);
 
+	elementCoG *extractElement(double random, RunningStats & deep, RunningStats & iter);
 
-	item *extractItem(double random, RunningStats & deep, RunningStats & iter);
+	elementCoG *updateElement(elementCoG *it, double newRate);
 
-	item *updateItem(item *it, double newRate);
-
-	item *updateItem(item *it, double newRate, int & counter);
+	elementCoG *updateElement(elementCoG *it, double newRate, int & counter);
 
 
 };

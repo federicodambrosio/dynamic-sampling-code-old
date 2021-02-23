@@ -167,7 +167,7 @@ int main() {
 					rates.push_back(rand);
 				}
 
-				std::vector<item *> nestedItems;
+				std::vector<elementCoG *> nestedItems;
 				std::vector<itemSSAR *> SSARItems;
 				std::vector<elementTOG *> SSACRItems;
 				std::vector<CBTNode *> treeItems;
@@ -236,7 +236,7 @@ int main() {
 				if (debugRate) tree.print();
 
 				for (int t = 0; t < maxRepetitions; t++) {
-					item *it;
+					elementCoG *it;
 					//nest.extractItem(random, deepNested, iterationNested);
 
 					int countExtract = 0;
@@ -318,7 +318,7 @@ int main() {
 
 
 				for (int t = 0; t < maxRepetitions; t++) {
-					item *it;
+					elementCoG *it;
 					double randomRate;
 					if (exponential) randomRate = exp(-random->operator()(rng));
 					if (!exponential) randomRate = random->operator()(rng);
@@ -640,7 +640,7 @@ int main() {
 					rates.push_back(rand);
 				}
 
-				std::vector<item *> nestedItems;
+				std::vector<elementCoG *> nestedItems;
 				std::vector<itemSSAR *> SSARLargeItems;
 				std::vector<elementTOG *> SSACRLargeItems;
 				std::vector<CBTNode *> treeItems;
@@ -700,7 +700,7 @@ int main() {
 
 
 				for (int t = 0; t < maxRepetitions; t++) {
-					item *it;
+					elementCoG *it;
 					//nest.extractItem(random, deepNested, iterationNested);
 
 					int countExtract = 0;
@@ -783,7 +783,7 @@ int main() {
 				}
 
 				for (int t = 0; t < maxRepetitions; t++) {
-					item *it;
+					elementCoG *it;
 					double randomRate;
 					if (exponential) randomRate = exp(-random->operator()(rng));
 					if (!exponential) randomRate = random->operator()(rng);

@@ -4,466 +4,13 @@
 
 #include "CascadeOfGroups.h"
 
-item *NestedGroupsLarge::updateItem(item *it, double newRate) {
-	if (newRate == it->rate) return it;
-
-	_totalRate += newRate - it->rate;
-
-	if (newRate == 0) {
-		_groups[it->groupId]->deleteItem(it);
-		it->groupId = -1;
-		return it;
-	}
-	if (it->rate == 0) {
-		it->rate = newRate;
-		int groupId = (int) std::floor(std::log(_maxRate / newRate) * _divBase);
-		_groups[groupId]->addItem(it);
-		return it;
-	}
-
-	int groupId = (int) std::floor(std::log(_maxRate / newRate) * _divBase);
-
-	if (groupId == it->groupId) {
-		_groups[groupId]->updateItem(it, newRate);
-		return it;
-	} else {
-		_groups[it->groupId]->deleteItem(it);
-		it->rate = newRate;
-		_groups[groupId]->addItem(it);
-		return it;
-	}
-}
-
-item *NestedGroupsLarge::extractItem(double random) {
-	double totRate = _totalRate;
-	double randomRate = totRate * random;
-	int i = 0;
-
-	while (true) {
-		if (_groups[i]->totalRate > randomRate) return _groups[i]->extractItem();
-		if (i == _groups.size() - 1) {
-			std::cout << _groups[i]->totalRate - randomRate << std::endl;
-			return _groups[i]->extractItem();
-		} else {
-			randomRate = randomRate - _groups[i]->totalRate;
-			i++;
-
-		}
-	}
-}
-
-item* NestedGroupsLarge::addItem(int payload, double rate) {
-	if (rate <= 0) return NULL;
-
-	if (rate > _maxRate or rate < _minRate) {
-		std::cout << "OOB RATE" << std::endl;
-		return NULL;
-	}
-
-	item *it = new item(payload, rate);
-	int groupId = (int) std::floor(std::log(_maxRate / rate) * _divBase);
-	_groups[groupId]->addItem(it);
-	_totalRate += rate;
-	_N++;
-	return it;
-
-}
-
-NestedGroupsLarge::NestedGroupsLarge(double minRate, double maxRate, int N, double ratio) {
-	rng.seed(time(0));
+CascadeOfGroups::CascadeOfGroups(double minRate, double maxRate, int n_, double ratio) {
+	rng.seed(time(nullptr));
 	randExt = new std::uniform_real_distribution<double>(0,1);
 	_maxRate = maxRate;
 	_minRate = minRate;
-	_ratio = ratio;
-	_divBase = 1. / std::log(_ratio);
-	int numberOfGroups = (int) std::floor(std::log(_maxRate / _minRate) * _divBase) + 1;
-	for (int i = 0; i < numberOfGroups; i++) {
-		double groupMax = _maxRate / pow(ratio, i);
-		double groupMin = _maxRate / pow(ratio, i + 1);
-		_groups.push_back(new singleGroupLarge(groupMin, groupMax, i, N));
-	}
-	_totalRate = 0;
-	_N = 0;
-
-}
-
-item *NestedGroupsLarge::extractItem(double random, RunningStats &deep, RunningStats &iter) {
-	double totRate = _totalRate;
-	double randomRate = totRate * random;
-	int i = 0;
-
-	while (true) {
-		if (_groups[i]->totalRate > randomRate) {
-			deep.Push(i);
-			return _groups[i]->extractItem(iter);
-		} else {
-			randomRate = randomRate - _groups[i]->totalRate;
-			i++;
-		}
-	}
-}
-
-item* NestedGroupsLarge::addItem(int payload, double rate, int &counter) {
-/*	counter++;
-	if (rate <= 0) return NULL;
-
-	counter++;
-	if (rate > _maxRate or rate < _minRate) {
-		std::cout << "OOB RATE" << std::endl;
-		return NULL;
-	}*/
-
-	item *it = new item(payload, rate);
-	counter++;
-	int groupId = (int) std::floor(std::log(_maxRate / rate) * _divBase);
-	counter+=3;
-	_groups[groupId]->addItem(it, counter);
-	counter++;
-	_totalRate += rate;
-	counter++;
-	_N++;
-	counter++;
-	return it;
-}
-
-item *NestedGroupsLarge::extractItem(double random, int &counter, int & randNumbers) {
-	double totRate = _totalRate;
-	counter++;
-	double randomRate = totRate * random;
-	counter++;
-	int i = 0;
-	counter++;
-
-	counter++;
-	while (true) {
-		counter++;
-		if (_groups[i]->totalRate > randomRate) return _groups[i]->extractItem(counter, randNumbers);
-
-		counter++;
-		if (i == _groups.size() - 1) {
-			return _groups[i]->extractItem(counter, randNumbers);
-		} else {
-			randomRate = randomRate - _groups[i]->totalRate;
-			counter++;
-			i++;
-			counter++;
-		}
-	}
-}
-
-
-item *NestedGroupsLarge::updateItem(item *it, double newRate, int &counter) {
-	counter++;
-	if (newRate == it->rate) return it;
-
-	_totalRate += newRate - it->rate;
-	counter++;
-
-	counter++;
-	if (newRate == 0) {
-		_groups[it->groupId]->deleteItem(it, counter);
-		counter++;
-		it->groupId = -1;
-		counter++;
-		return it;
-	}
-	counter++;
-	if (it->rate == 0) {
-		it->rate = newRate;
-		counter++;
-		int groupId = (int) std::floor(std::log(_maxRate / newRate) * _divBase);
-		counter+=3;
-		_groups[groupId]->addItem(it, counter);
-		counter++;
-		return it;
-	}
-
-	int groupId = (int) std::floor(std::log(_maxRate / newRate) * _divBase);
-	counter+=3;
-
-	counter++;
-	if (groupId == it->groupId) {
-		_groups[groupId]->updateItem(it, newRate, counter);
-		counter++;
-		return it;
-	} else {
-		_groups[it->groupId]->deleteItem(it, counter);
-		counter++;
-		it->rate = newRate;
-		counter++;
-		_groups[groupId]->addItem(it, counter);
-		counter++;
-		return it;
-	}
-}
-
-item *NestedGroupsLarge::extractItem() {
-	double totRate = _totalRate;
-	double randomRate = totRate * randExt->operator()(rng);
-	int i = 0;
-
-	while (true) {
-		if (_groups[i]->totalRate > randomRate) return _groups[i]->extractItem();
-
-		if (i == _groups.size() - 1) {
-			std::cout << _groups[i]->totalRate - randomRate << std::endl;
-			return _groups[i]->extractItem();
-		} else {
-			randomRate = randomRate - _groups[i]->totalRate;
-			i++;
-		}
-	}
-}
-
-item *NestedGroupsLarge::extractItem(int &counter, int & randNumbers) {
-	double totRate = _totalRate;
-	counter++;
-	double randomRate = totRate * randExt->operator()(rng);
-	randNumbers++;
-	counter+=2;
-	int i = 0;
-	counter++;
-
-	counter++;
-	while (true) {
-		counter++;
-		if (_groups[i]->totalRate > randomRate) {
-			counter++;
-			return _groups[i]->extractItem(counter, randNumbers);
-		}
-
-		counter++;
-		if (i == _groups.size() - 1) {
-			counter++;
-			return _groups[i]->extractItem(counter, randNumbers);
-		} else {
-			randomRate = randomRate - _groups[i]->totalRate;
-			counter++;
-			i++;
-			counter++;
-		}
-	}
-}
-
-
-
-
-item *singleGroupLarge::extractItem() {
-	while (true) {
-		double random = randExt->operator()(rng) * N;
-		int itemId = std::floor(random);
-		random = (random - (double) itemId) * max;
-		if (random <= items[itemId]->k) return items[itemId];
-	}
-}
-
-
-item *singleGroupLarge::addItem(item *it) {
-	if (it->rate > max or it->rate < min) {
-		std::cout << "WRONG GROUP (add)" << std::endl;
-		return NULL;
-	}
-	items.push_back(it);
-	it->moveId = items.size() - 1;
-	it->groupId = groupId;
-	totalRate += it->rate;
-	N++;
-	return it;
-}
-
-void singleGroupLarge::updateItem(item *it, double newRate) {
-	if (it->groupId != groupId) {
-		std::cout << "WRONG GROUP (update)" << std::endl;
-		return;
-	}
-	double diff = newRate - it->rate;
-	it->rate = newRate;
-	totalRate = totalRate + diff;
-
-}
-
-void singleGroupLarge::deleteItem(item *it) {
-	if (it->groupId != groupId) {
-		std::cout << "WRONG GROUP (delete)" << std::endl;
-		return;
-	}
-	if (N == 1) {
-		items.clear();
-		totalRate = 0;
-		N = 0;
-		return;
-	}
-
-	N--;
-	totalRate -= it->rate;
-	it->groupId = -1;
-	items[it->moveId] = items[items.size() - 1];
-	items[it->moveId]->elementID = it->moveId;
-	items.pop_back();
-
-}
-
-item *singleGroupLarge::extractItem(RunningStats &rs) {
-	double iter = 1;
-	while (true) {
-		double random = randExt->operator()(rng) * N;
-		int itemId = std::floor(random);
-		random = (random - (double) itemId) * max;
-		if (random <= items[itemId]->k) {
-			rs.Push(iter);
-			return items[itemId];
-		}
-		iter++;
-	}
-}
-
-item *singleGroupLarge::addItem(item *it, int &counter) {
-	/*if (it->rate > max or it->rate < min) {
-		std::cout << "WRONG GROUP (add)" << std::endl;
-		return NULL;
-	}*/
-	items.push_back(it);
-	counter++;
-	it->moveId = items.size() - 1;
-	counter++;
-	it->groupId = groupId;
-	counter++;
-	totalRate += it->rate;
-	counter++;
-	N++;
-	counter++;
-
-	return it;
-}
-
-item *singleGroupLarge::extractItem(int &counter, int & randNumbers) {
-	while (true) {
-		double random = randExt->operator()(rng) * N;
-		randNumbers++;
-		int itemId = std::floor(random);
-		counter++;
-		random = (random - (double) itemId) * max;
-		counter++;
-		if (random <= items[itemId]->k) return items[itemId];
-	}
-}
-
-void singleGroupLarge::updateItem(item *it, double newRate, int &counter) {
-	/*if (it->groupId != groupId) {
-		std::cout << "WRONG GROUP (update)" << std::endl;
-		return;
-	}*/
-	double diff = newRate - it->rate;
-	counter++;
-	it->rate = newRate;
-	counter++;
-	totalRate = totalRate + diff;
-	counter++;
-}
-
-void singleGroupLarge::deleteItem(item *it, int &counter) {
-	/*if (it->groupId != groupId) {
-		std::cout << "WRONG GROUP (delete)" << std::endl;
-		return;
-	}*/
-	counter++;
-	if (N == 1) {
-		items.clear();
-		counter++;
-		totalRate = 0;
-		counter++;
-		N = 0;
-		counter++;
-		return;
-	}
-
-	N--;
-	counter++;
-	totalRate -= it->rate;
-	counter++;
-	it->groupId = -1;
-	counter++;
-	items[it->moveId] = items[items.size() - 1];
-	counter++;
-	items[it->moveId]->elementID = it->moveId;
-	counter++;
-	items.pop_back();
-	counter++;
-}
-
-
-item *CascadeOfGroups::updateItem(item *it, double newRate) {
-	if (newRate == it->rate) return it;
-
-	_totalRate += newRate - it->rate;
-
-	if (newRate == 0) {
-		_groups[it->groupId]->deleteItem(it);
-		it->groupId = -1;
-		return it;
-	}
-	if (it->rate == 0) {
-		it->rate = newRate;
-		int groupId = (int) std::floor(std::log(_maxRate / newRate) * _divBase);
-		_groups[groupId]->addItem(it);
-		return it;
-	}
-
-	int groupId = (int) std::floor(std::log(_maxRate / newRate) * _divBase);
-
-	if (groupId == it->groupId) {
-		_groups[groupId]->updateItem(it, newRate);
-		return it;
-	} else {
-		_groups[it->groupId]->deleteItem(it);
-		it->rate = newRate;
-		_groups[groupId]->addItem(it);
-		return it;
-	}
-}
-
-item *CascadeOfGroups::extractItem(double random) {
-	double totRate = _totalRate;
-	double randomRate = totRate * random;
-	int i = 0;
-
-	while (true) {
-		if (_groups[i]->totalRate > randomRate) return _groups[i]->extractItem();
-		if (i == _groups.size() - 1) {
-			std::cout << _groups[i]->totalRate - randomRate << std::endl;
-			return _groups[i]->extractItem();
-		} else {
-			randomRate = randomRate - _groups[i]->totalRate;
-			i++;
-
-		}
-	}
-}
-
-item* CascadeOfGroups::addItem(int payload, double rate) {
-	if (rate <= 0) return NULL;
-
-	if (rate > _maxRate or rate < _minRate) {
-		std::cout << "OOB RATE" << std::endl;
-		return NULL;
-	}
-
-	item *it = new item(payload, rate);
-	int groupId = (int) std::floor(std::log(_maxRate / rate) * _divBase);
-	_groups[groupId]->addItem(it);
-	_totalRate += rate;
-	_N++;
-	return it;
-
-}
-
-CascadeOfGroups::CascadeOfGroups(double minRate, double maxRate, int N, double ratio) {
-	rng.seed(time(0));
-	randExt = new std::uniform_real_distribution<double>(0,1);
-	_maxRate = maxRate;
-	_minRate = minRate;
-	_ratio = ratio;
-	_divBase = 1. / std::log(_ratio);
+	_c = ratio;
+	_divBase = 1. / std::log(_c);
 	int numberOfGroups = (int) std::floor(std::log(_maxRate / _minRate) * _divBase) + 1;
 	for (int i = 0; i < numberOfGroups; i++) {
 		double groupMax = _maxRate / pow(ratio, i);
@@ -471,11 +18,77 @@ CascadeOfGroups::CascadeOfGroups(double minRate, double maxRate, int N, double r
 		_groups.push_back(new singleGroup(groupMin, groupMax, i, N));
 	}
 	_totalRate = 0;
-	_N = 0;
+	N = n_;
+}
+
+elementCoG *CascadeOfGroups::updateElement(elementCoG *it, double newRate) {
+	if (newRate == it->rate) return it;                                                 //no change
+
+	_totalRate += newRate - it->rate;                                                   //updates total rate
+
+	if (newRate == 0) {                                                                 //event becomes impossible
+		_groups[it->groupId]->deleteElement(it);
+		it->groupId = -1;
+		return it;
+	}
+	if (it->rate == 0) {                                                                //event was impossible
+		it->rate = newRate;
+		int groupId = (int) std::floor(std::log(_maxRate / newRate) * _divBase);
+		_groups[groupId]->addElement(it);
+		return it;
+	}
+
+	int groupId = (int) std::floor(std::log(_maxRate / newRate) * _divBase);
+
+	if (groupId == it->groupId) {
+		_groups[groupId]->updateElement(it, newRate);
+		return it;
+	} else {
+		_groups[it->groupId]->deleteElement(it);
+		it->rate = newRate;
+		_groups[groupId]->addElement(it);
+		return it;
+	}
+}
+
+elementCoG *CascadeOfGroups::extractElement(double random) {
+	double totRate = _totalRate;
+	double randomRate = totRate * random;
+	int i = 0;
+
+	while (true) {
+		if (_groups[i]->totalRate > randomRate) return _groups[i]->extractElement();
+		if (i == _groups.size() - 1) {
+			std::cout << _groups[i]->totalRate - randomRate << std::endl;
+			return _groups[i]->extractElement();
+		} else {
+			randomRate = randomRate - _groups[i]->totalRate;
+			i++;
+
+		}
+	}
+}
+
+elementCoG* CascadeOfGroups::addElement(int payload, double rate) {
+	if (rate <= 0) return NULL;
+
+	if (rate > _maxRate or rate < _minRate) {
+		std::cout << "OOB RATE" << std::endl;
+		return NULL;
+	}
+
+	elementCoG *it = new elementCoG(payload, rate);
+	int groupId = (int) std::floor(std::log(_maxRate / rate) * _divBase);
+	_groups[groupId]->addElement(it);
+	_totalRate += rate;
+	N++;
+	return it;
 
 }
 
-item *CascadeOfGroups::extractItem(double random, RunningStats &deep, RunningStats &iter) {
+
+
+elementCoG *CascadeOfGroups::extractElement(double random, RunningStats &deep, RunningStats &iter) {
 	double totRate = _totalRate;
 	double randomRate = totRate * random;
 	int i = 0;
@@ -483,7 +96,7 @@ item *CascadeOfGroups::extractItem(double random, RunningStats &deep, RunningSta
 	while (true) {
 		if (_groups[i]->totalRate > randomRate) {
 			deep.Push(i);
-			return _groups[i]->extractItem(iter);
+			return _groups[i]->extractElement(iter);
 		} else {
 			randomRate = randomRate - _groups[i]->totalRate;
 			i++;
@@ -491,7 +104,7 @@ item *CascadeOfGroups::extractItem(double random, RunningStats &deep, RunningSta
 	}
 }
 
-item* CascadeOfGroups::addItem(int payload, double rate, int &counter) {
+elementCoG* CascadeOfGroups::addElement(int payload, double rate, int &counter) {
 	counter++;
 	if (rate <= 0) return NULL;
 
@@ -500,20 +113,20 @@ item* CascadeOfGroups::addItem(int payload, double rate, int &counter) {
 		return NULL;
 	}*/
 
-	item *it = new item(payload, rate);
+	elementCoG *it = new elementCoG(payload, rate);
 	counter++;
 	int groupId = (int) std::floor(std::log(_maxRate / rate) * _divBase);
 	counter+=3;
-	_groups[groupId]->addItem(it, counter);
+	_groups[groupId]->addElement(it, counter);
 	counter++;
 	_totalRate += rate;
 	counter++;
-	_N++;
+	N++;
 	counter++;
 	return it;
 }
 
-item *CascadeOfGroups::extractItem(double random, int &counter, int & randNumbers) {
+elementCoG *CascadeOfGroups::extractElement(double random, int &counter, int & randNumbers) {
 	double totRate = _totalRate;
 	counter++;
 	double randomRate = totRate * random;
@@ -525,12 +138,12 @@ item *CascadeOfGroups::extractItem(double random, int &counter, int & randNumber
 		counter++;
 		if (_groups[i]->totalRate > randomRate){
 			counter++;
-			return _groups[i]->extractItem(counter, randNumbers);
+			return _groups[i]->extractElement(counter, randNumbers);
 		}
 		counter++;
 		if (i == _groups.size() - 1) {
 			counter++;
-			return _groups[i]->extractItem(counter, randNumbers);
+			return _groups[i]->extractElement(counter, randNumbers);
 		} else {
 			randomRate = randomRate - _groups[i]->totalRate;
 			counter++;
@@ -541,7 +154,7 @@ item *CascadeOfGroups::extractItem(double random, int &counter, int & randNumber
 }
 
 
-item *CascadeOfGroups::updateItem(item *it, double newRate, int &counter) {
+elementCoG *CascadeOfGroups::updateElement(elementCoG *it, double newRate, int &counter) {
 	counter++;
 	if (newRate == it->rate) return it;
 
@@ -550,7 +163,7 @@ item *CascadeOfGroups::updateItem(item *it, double newRate, int &counter) {
 
 	counter++;
 	if (newRate == 0) {
-		_groups[it->groupId]->deleteItem(it, counter);
+		_groups[it->groupId]->deleteElement(it, counter);
 		counter++;
 		it->groupId = -1;
 		counter++;
@@ -562,7 +175,7 @@ item *CascadeOfGroups::updateItem(item *it, double newRate, int &counter) {
 		counter++;
 		int groupId = (int) std::floor(std::log(_maxRate / newRate) * _divBase);
 		counter+=3;
-		_groups[groupId]->addItem(it, counter);
+		_groups[groupId]->addElement(it, counter);
 		counter++;
 		return it;
 	}
@@ -573,30 +186,30 @@ item *CascadeOfGroups::updateItem(item *it, double newRate, int &counter) {
 	counter++;
 	if (groupId == it->groupId) {
 		counter++;
-		_groups[groupId]->updateItem(it, newRate, counter);
+		_groups[groupId]->updateElement(it, newRate, counter);
 		return it;
 	} else {
-		_groups[it->groupId]->deleteItem(it, counter);
+		_groups[it->groupId]->deleteElement(it, counter);
 		counter++;
 		it->rate = newRate;
 		counter++;
-		_groups[groupId]->addItem(it, counter);
+		_groups[groupId]->addElement(it, counter);
 		counter++;
 		return it;
 	}
 }
 
-item *CascadeOfGroups::extractItem() {
+elementCoG *CascadeOfGroups::extractElement() {
 	double totRate = _totalRate;
 	double randomRate = totRate * randExt->operator()(rng);
 	int i = 0;
 
 	while (true) {
-		if (_groups[i]->totalRate > randomRate) return _groups[i]->extractItem();
+		if (_groups[i]->totalRate > randomRate) return _groups[i]->extractElement();
 
 		if (i == _groups.size() - 1) {
 			std::cout << _groups[i]->totalRate - randomRate << std::endl;
-			return _groups[i]->extractItem();
+			return _groups[i]->extractElement();
 		} else {
 			randomRate = randomRate - _groups[i]->totalRate;
 			i++;
@@ -604,7 +217,7 @@ item *CascadeOfGroups::extractItem() {
 	}
 }
 
-item *CascadeOfGroups::extractItem(int &counter, int & randNumbers) {
+elementCoG *CascadeOfGroups::extractElement(int &counter, int & randNumbers) {
 	double totRate = _totalRate;
 	counter++;
 	double randomRate = totRate * randExt->operator()(rng);
@@ -618,7 +231,7 @@ item *CascadeOfGroups::extractItem(int &counter, int & randNumbers) {
 		counter++;
 		if (_groups[i]->totalRate > randomRate) {
 			counter++;
-			return _groups[i]->extractItem(counter, randNumbers);
+			return _groups[i]->extractElement(counter, randNumbers);
 		}
 
 		counter++;
@@ -626,7 +239,7 @@ item *CascadeOfGroups::extractItem(int &counter, int & randNumbers) {
 			counter++;
 			//std::cout << _groups[i]->totalRate - randomRate << std::endl;
 			counter++;
-			return _groups[i]->extractItem(counter, randNumbers);
+			return _groups[i]->extractElement(counter, randNumbers);
 		} else {
 			randomRate = randomRate - _groups[i]->totalRate;
 			counter++;
@@ -639,30 +252,30 @@ item *CascadeOfGroups::extractItem(int &counter, int & randNumbers) {
 
 
 
-item *singleGroup::extractItem() {
+elementCoG *singleGroup::extractElement() {
 	while (true) {
 		double random = randExt->operator()(rng) * N;
-		int itemId = std::floor(random);
-		random = (random - (double) itemId) * max;
-		if (random <= items[itemId]->rate) return items[itemId];
+		int elementId = std::floor(random);
+		random = (random - (double) elementId) * max;
+		if (random <= elements[elementId]->rate) return elements[elementId];
 	}
 }
 
 
-item *singleGroup::addItem(item *it) {
+elementCoG *singleGroup::addElement(elementCoG *it) {
 	if (it->rate > max or it->rate < min) {
 		std::cout << "WRONG GROUP (add)" << std::endl;
 		return NULL;
 	}
-	items.push_back(it);
-	it->moveId = items.size() - 1;
+	elements.push_back(it);
+	it->moveId = elements.size() - 1;
 	it->groupId = groupId;
 	totalRate += it->rate;
 	N++;
 	return it;
 }
 
-void singleGroup::updateItem(item *it, double newRate) {
+void singleGroup::updateElement(elementCoG *it, double newRate) {
 	if (it->groupId != groupId) {
 		std::cout << "WRONG GROUP (update)" << std::endl;
 		return;
@@ -673,13 +286,13 @@ void singleGroup::updateItem(item *it, double newRate) {
 
 }
 
-void singleGroup::deleteItem(item *it) {
+void singleGroup::deleteElement(elementCoG *it) {
 	if (it->groupId != groupId) {
 		std::cout << "WRONG GROUP (delete)" << std::endl;
 		return;
 	}
 	if (N == 1) {
-		items.clear();
+		elements.clear();
 		totalRate = 0;
 		N = 0;
 		return;
@@ -688,34 +301,34 @@ void singleGroup::deleteItem(item *it) {
 	N--;
 	totalRate -= it->rate;
 	it->groupId = -1;
-	items[it->moveId] = items[items.size() - 1];
-	items[it->moveId]->moveId = it->moveId;
-	items.pop_back();
+	elements[it->moveId] = elements[elements.size() - 1];
+	elements[it->moveId]->moveId = it->moveId;
+	elements.pop_back();
 
 }
 
-item *singleGroup::extractItem(RunningStats &rs) {
+elementCoG *singleGroup::extractElement(RunningStats &rs) {
 	double iter = 1;
 	while (true) {
 		double random = randExt->operator()(rng) * N;
-		int itemId = std::floor(random);
-		random = (random - (double) itemId) * max;
-		if (random <= items[itemId]->rate) {
+		int elementId = std::floor(random);
+		random = (random - (double) elementId) * max;
+		if (random <= elements[elementId]->rate) {
 			rs.Push(iter);
-			return items[itemId];
+			return elements[elementId];
 		}
 		iter++;
 	}
 }
 
-item *singleGroup::addItem(item *it, int &counter) {
+elementCoG *singleGroup::addElement(elementCoG *it, int &counter) {
 	/*if (it->rate > max or it->rate < min) {
 		std::cout << "WRONG GROUP (add)" << std::endl;
 		return NULL;
 	}*/
-	items.push_back(it);
+	elements.push_back(it);
 	counter++;
-	it->moveId = items.size() - 1;
+	it->moveId = elements.size() - 1;
 	counter++;
 	it->groupId = groupId;
 	counter++;
@@ -727,22 +340,22 @@ item *singleGroup::addItem(item *it, int &counter) {
 	return it;
 }
 
-item *singleGroup::extractItem(int &counter, int & randNumbers) {
+elementCoG *singleGroup::extractElement(int &counter, int & randNumbers) {
 	while (true) {
 		counter++;
 		double random = randExt->operator()(rng) * N;
 		counter++;
 		randNumbers++;
-		int itemId = std::floor(random);
+		int elementId = std::floor(random);
 		counter++;
-		random = (random - (double) itemId) * max;
+		random = (random - (double) elementId) * max;
 		counter+=2;
 		counter++;
-		if (random <= items[itemId]->rate) return items[itemId];
+		if (random <= elements[elementId]->rate) return elements[elementId];
 	}
 }
 
-void singleGroup::updateItem(item *it, double newRate, int &counter) {
+void singleGroup::updateElement(elementCoG *it, double newRate, int &counter) {
 	/*if (it->groupId != groupId) {
 		std::cout << "WRONG GROUP (update)" << std::endl;
 		return;
@@ -755,14 +368,14 @@ void singleGroup::updateItem(item *it, double newRate, int &counter) {
 	counter++;
 }
 
-void singleGroup::deleteItem(item *it, int &counter) {
+void singleGroup::deleteElement(elementCoG *it, int &counter) {
 	/*if (it->groupId != groupId) {
 		std::cout << "WRONG GROUP (delete)" << std::endl;
 		return;
 	}*/
 	counter++;
 	if (N == 1) {
-		items.clear();
+		elements.clear();
 		counter++;
 		totalRate = 0;
 		counter++;
@@ -777,10 +390,10 @@ void singleGroup::deleteItem(item *it, int &counter) {
 	counter++;
 	it->groupId = -1;
 	counter++;
-	items[it->moveId] = items[items.size() - 1];
+	elements[it->moveId] = elements[elements.size() - 1];
 	counter++;
-	items[it->moveId]->moveId = it->moveId;
+	elements[it->moveId]->moveId = it->moveId;
 	counter++;
-	items.pop_back();
+	elements.pop_back();
 	counter++;
 }
