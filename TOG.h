@@ -194,7 +194,7 @@ class TOG {                                 //Tree of Groups, Section 3.4
 	const double minR;                      //minimum possible rate " " "
 	int nGroups=0;                          //how many groups
 	const double k;                         //grouping constant, i.e. group i is form rmax/k^(i-1) to rmax/k^i
-	double logBase;                         // 1/log2(k)
+	const double logBase;                         // 1/log2(k)
 	int totalN=0;                           //how many elements
 
 	std::mt19937 rng;
@@ -210,7 +210,7 @@ public:
 
 	elementTOG * sampleElement();
 	
-	elementTOG * sampleElement(RunningStats & it);                  //samples and stores ops in a RunningStats
+	elementTOG * sampleElement(RunningStats & it);                  //samples and stores # iterations in a RunningStats
 	
 	elementTOG * sampleElement(int & counter, int & randNumbers);   //samples and stores ops in counter and # of rand
 																	//numbers generated in randNumbers
