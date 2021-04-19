@@ -8,9 +8,10 @@
 #include <random>
 
 struct elementAR {
-	int payload;                //unique event id
-	int position;               //position in the event vector, useful for updates
+	unsigned long payload;                //unique event id
+	unsigned long position;               //position in the event vector, useful for updates
 	double rate;                //rate of the event
+
 
 	elementAR() : position(-1), payload(-1), rate(0){}
 	elementAR(int pl, int ps, double r) : payload(pl), position(ps), rate(r){}
@@ -24,6 +25,8 @@ class AcceptanceRejection {                                 //Section 3.2
 	std::uniform_real_distribution<double> * randExt;
 
 public:
+	double currentRate = 0;                                 //current total rate in AR
+
 	//init random number generation methods
 	AcceptanceRejection(){
 		rng.seed(time(nullptr));
@@ -34,16 +37,14 @@ public:
 		for (auto & item : items) delete item;
 	}
 	//adds an event to the data structure
-	elementAR* addMove(double rate);                        //payload = order of creation
-	elementAR* addMove(elementAR * it);                     //adds a pre-created event
-	elementAR* addMove(elementAR * it, int & counter);      //counter is increased by the number of operations required
+	elementAR* addElement(double rate);                        //payload = order of creation
+	elementAR* addElement(elementAR * it);                     //adds a pre-created event
 
-	elementAR * getMove();                                  //returns an event according to rate
-	elementAR * getMove(int & counter, int & randNumbers);  //increases counter by the number of operations and
+	elementAR * sampleElement();                                  //returns an event according to rate
 															//randNumbers by the number of random numbers generated
+	void updateElement(elementAR* i, double newRate);                  //updates the rate of an event
 
-	void updateMove(elementAR* i, double newRate);                  //updates the rate of an event
-	void updateMove(elementAR* i, double newRate, int & counter);   //increases counter by the number of operations
+	void deleteElement(elementAR* i);                          //does not delete the object
 
 };
 

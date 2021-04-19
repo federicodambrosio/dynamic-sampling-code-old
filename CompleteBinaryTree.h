@@ -11,7 +11,7 @@
 
 //each node in the tree is a CBTNode object
 struct CBTNode {
-	int payload;
+	unsigned long payload;
 
 	double rate;
 
@@ -21,7 +21,7 @@ struct CBTNode {
 	CBTNode *parent = nullptr;
 	CBTNode *left = nullptr;
 	CBTNode *right = nullptr;
-	int mass;           //how many leaves under this node
+	unsigned long mass;           //how many leaves under this node
 
 	CBTNode() {         //generates internal node (payload doesn't matter for them)
 		rate = 0;
@@ -30,7 +30,7 @@ struct CBTNode {
 		mass = 0;
 	};
 
-	CBTNode(int pl, double r) { //generates leaf
+	CBTNode(unsigned long pl, double r) { //generates leaf
 		rate = r;
 		payload = pl;
 		leaf = true;
@@ -62,7 +62,7 @@ public:
 
 	~CompleteBinaryTree();
 
-	CBTNode *addLeaf(int pl, double r);  //adds a new leaf, with given payload and rate
+	CBTNode *addLeaf(unsigned long pl, double r);  //adds a new leaf, with given payload and rate
 
 	void addLeaf(CBTNode *node);        //adds a previously created leaf
 

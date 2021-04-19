@@ -142,7 +142,7 @@ void CompleteBinaryTree::updateNode(CBTNode *node) {       //this updates upward
 	}
 }
 
-CBTNode *CompleteBinaryTree::addLeaf(int pl, double r) {
+CBTNode *CompleteBinaryTree::addLeaf(unsigned long pl, double r) {
 	auto *node = new CBTNode(pl, r);
 	addLeaf(node);
 	return node;
@@ -229,7 +229,7 @@ CBTNode *CompleteBinaryTree::sampleLeaf() {
 	double random = randExt->operator()(rng);
 	random = random * root->rate;              //random is now between 0 and totalrate
 
-	CBTNode *workingNode = root;                    //starts from root
+	CBTNode *workingNode = this->root;                    //starts from root
 
 	while (!(workingNode->leaf)) {                  //repeat until we get to a leaf
 		//if the random rate is < left rate, goes there
