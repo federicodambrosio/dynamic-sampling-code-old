@@ -1,7 +1,10 @@
 #include <cmath>
 #ifndef RUNNINGSTATS_HPP
 #define RUNNINGSTATS_HPP
-
+//
+// This class is an implementation of the Welford Method: 
+// Welford B, 1962, Note on a Method for Calculating Corrected Sums of Squares and Products, Technometrics 4 419–20
+//
 class RunningStats
 {
 public:

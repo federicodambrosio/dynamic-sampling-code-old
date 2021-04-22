@@ -1,5 +1,6 @@
 //
-// Created by federicodambrosio on 9-3-17.
+// The class CompleteBinaryTree implements the Complete Binary Tree method from the paper.
+// It is referenced by the TOG (Tree of Groups), TwoLevelARB, CascadeOfGroups classes
 //
 
 #ifndef ACCEPTANCE_REJECTION
@@ -18,7 +19,7 @@ struct elementAR {
 	elementAR(int pl, int ps, double r, int & counter) : payload(pl), position(ps), rate(r){counter+=3;}
 };
 
-class AcceptanceRejection {                                 //Section 3.2
+class AcceptanceRejection {                                
 	std::mt19937 rng;
 	double maxR=0;                                          //largest rate encountered by the data structure
 	std::vector<elementAR*> items;                          //vector of events

@@ -1,5 +1,6 @@
 //
-// Created by federicodambrosio on 20-12-16.
+// The class CompleteBinaryTree implements the Complete Binary Tree method from the paper.
+// It is referenced by the TOG (Tree of Groups) class
 //
 
 #ifndef COMPLETE_BINARY_TREE_H
@@ -44,13 +45,13 @@ struct CBTNode {
 };
 
 
-class CompleteBinaryTree {          //Section 3.1
+class CompleteBinaryTree {          
 	std::vector<CBTNode*>  nodes;   //here the pointers to all of the nodes are stored for debug and easy access
 									//but not normally accessed
 	CBTNode *root;                  //the root of the tree
 	std::vector<CBTNode*> touched; //nodes "touched" since the last tree update
 
-	static static void updateNode(CBTNode *node); //private method for update a node
+	static void updateNode(CBTNode *node); //private method for update a node
 
 	int Nleafs=0;                   //number of leafs
 
@@ -68,19 +69,12 @@ public:
 
 	void updateLeaf(CBTNode *leaf, double r);   //update a leaf, requires updateTree
 
-	void updateLeaf(CBTNode *leaf, double r, int & counter);   //adds to counter # of operations required
-
-	CBTNode *sampleLeaf(double random);                    //samples with a given random number (b.w. 0 and 1)
-
-	CBTNode *sampleLeaf(double random, int & counter);    //same but updates counter w/ # of operations required
-
 	CBTNode *sampleLeaf();                                //samples leaf
-
-	CBTNode *sampleLeaf(int & counter);                   //same but updates counter w/ # of operations required
+	
+	CBTNode *sampleLeaf(double random);                    //samples with a given random number (b.w. 0 and 1)
 
 	void updateTree();                  //update the whole tree. has to be invoked after updating leafs before extracting
 
-	void updateTree(int & counter);     //same but updates counter w/ # of operations required
 
 	double getRate() { return root->rate; };   //outputs sum of all rates, which is, by definition, the rate of the root
 

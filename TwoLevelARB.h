@@ -1,5 +1,5 @@
 //
-// Created by Federico D'Ambrosio on 01/04/2021.
+// This class implements the Two Level Acceptance-Rejection with Multiple Bins
 //
 
 #ifndef GRID_TWOLEVELARB_H

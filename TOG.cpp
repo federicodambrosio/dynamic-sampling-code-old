@@ -1,7 +1,3 @@
-//
-// Created by federicodambrosio on 6-2-17.
-//
-
 #include "TOG.h"
 #include "RunningStats.hpp"
 
@@ -42,45 +38,47 @@ void TOG::updateElement(elementTOG * m, double newRate) {
 		m->groupId = - 1;                       //no group
 		m->elementID = -1;
 		m->rate = 0;
-
+		tree.updateLeaf(groups[groupId]->node,groups[groupId]->totalR);
 		return;
 	}
 
 	if (groups[groupId]->isInside(newRate)) {       //rate changed, but it's still in the same group
 		groups[groupId]->updateElement(m,newRate);  //updates the element inside the group and that's it
+		tree.updateLeaf(groups[groupId]->node,groups[groupId]->totalR);
 		return;
 	}
 
 	if (!groups[groupId]->isInside(newRate)) {      //rate changed, different group now
 		int newGroupId = (int) (floor (log2(newRate / minR) * logBase));
 		groups[groupId]->deleteElement(m);          //delete from previous group
+		tree.updateLeaf(groups[groupId]->node,groups[groupId]->totalR);
 		m->rate = newRate;
 		groups[newGroupId]->addElement(m);          //add to new group
+		tree.updateLeaf(groups[newGroupId]->node,groups[newGroupId]->totalR);
 
 		return;
 	}
 }
 
 elementTOG *TOG::sampleElement() {
-	double r2 = randExt->operator()(rng);
-	CBTNode * extractedNode = tree.sampleLeaf(r2);      //samples group from CBT
-	int groupId = extractedNode->payload;
-	int iteration=0;
-	while (true){                                       //Acceptance Rejection on that group
-		double r3 = randExt->operator()(rng) * (groups[groupId]->totalN-1);
-		int elementId =(int)std::floor(r3);
-		double randElement = (r3 - (double)elementId) * groups[groupId]->maxR;
-		iteration++;
-		if (groups[groupId]->elements[elementId]->rate >= randElement ) {
-			return groups[groupId]->elements[elementId];
+	while(true){
+		double r2 = randExt->operator()(rng);
+		CBTNode * extractedNode = tree.sampleLeaf(r2);      //samples group from CBT
+		int groupId = extractedNode->payload;
+		int iteration=0;
+		while (true){                                       //Acceptance Rejection on that group
+			double r3 = randExt->operator()(rng) * (groups[groupId]->totalN-1);
+			int elementId =(int)std::floor(r3);
+			double randElement = (r3 - (double)elementId) * groups[groupId]->maxR;
+			iteration++;
+			if (groups[groupId]->elements[elementId]->rate >= randElement ) {
+				return groups[groupId]->elements[elementId];
+			}
 		}
 	}
 }
 
 void TOG::update() {            //updates the tree connected to the structure
-	for (auto & group : groups) {
-		tree.updateLeaf(group->node, group->totalR);
-	}
 	tree.updateTree();
 }
 
@@ -92,6 +90,7 @@ void TOG::addElement(elementTOG * m) {
 	}
 	int groupId = (int) floor ((log2(m->rate / minR))*logBase); //which group it's going to end in
 	groups[groupId]->addElement(m);
+	tree.updateLeaf(groups[groupId]->node,groups[groupId]->totalR);
 	totalN++;
 }
 
@@ -125,135 +124,9 @@ void TOG::printGroups() {                               //print groups to stdout
 	}
 }
 
-elementTOG * TOG::sampleElement(RunningStats & it) {          //as above, but stores # of iterations of A-R
-	std::uniform_real_distribution<double> random(0,1); //in a RunningStats structure
-	double r2 = random(rng);
-	CBTNode * extractedNode = tree.sampleLeaf(r2);
-	int groupId = extractedNode->payload;
-	int iteration=0;
-	while (true){
-		double r3 = random(rng);
-		double r4 = random(rng);
-		int elementId =(int)std::floor(r3 * (groups[groupId]->totalN-1));
-		r4 = r4 * groups[groupId]->maxR;
-		iteration++;
-		if (groups[groupId]->elements[elementId]->rate >= r4 ) {
-			it.Push(iteration);
-			return groups[groupId]->elements[elementId];
-		}
-	}
-
-}
 
 elementTOG* TOG::addElement(int position, double rate) {
 	auto * m= new elementTOG(position, rate);
 	addElement(m);
 	return m;
-}
-
-elementTOG *TOG::sampleElement(int & counter, int & randNumbers) {
-	double r2 = randExt->operator()(rng);
-	randNumbers++;
-	CBTNode * extractedNode = tree.sampleLeaf(r2, counter);
-	counter++;
-	int groupId = extractedNode->payload;
-	counter++;
-	//int iteration=0;
-	counter++;
-	while (true){
-		double r3 = randExt->operator()(rng) * (groups[groupId]->totalN-1);
-		randNumbers++;
-		int elementId =(int)std::floor(r3);
-		counter++;
-		double randElement = (r3 - (double)elementId) * groups[groupId]->maxR;
-		counter++;
-		//iteration++;
-		if (groups[groupId]->elements[elementId]->rate >= randElement ) {
-			return groups[groupId]->elements[elementId];
-		}
-	}
-}
-
-void TOG::updateElement(elementTOG *m, double newRate, int &counter) {
-	if (newRate == m->rate) return;
-
-	int groupId = m->groupId;
-	counter++;
-
-	if (groupId == -1) {    //previously impossible elementTOG, no group assigned
-		if (newRate==0) return;
-		m->rate = newRate;
-		counter++;
-		addElement(m,counter);
-		counter++;
-		totalN++;
-		counter++;
-		return;
-	}
-
-	if (newRate == 0) {     //if the elementTOG is impossible, copies the last over it and shrink by one
-		//int oldGroup = m->groupId;
-		//int oldElement = m->elementID;
-		groups[groupId]->deleteElement(m,counter);
-		m->groupId = - 1; //empty so no group
-		counter++;
-		m->elementID = -1;
-		counter++;
-		m->rate = 0;
-		counter++;
-		totalN--;
-		counter++;
-
-		/*if (m->isEqual(groups[oldGroup].elements[oldElement]) && groups[oldGroup].elements[oldElement]->rate>0){
-			std::cout<<"SOMETHING WRONG"<<std::endl;
-		}*/
-
-		return;
-
-	}
-
-
-	if (groups[groupId]->isInside(newRate)) {
-		groups[groupId]->updateElement(m,newRate,counter);
-		return;
-	}
-
-	if (!groups[groupId]->isInside(newRate)) {
-		int newGroupId = (int) (floor (log2(newRate / minR) * logBase));
-		counter++;
-		groups[groupId]->deleteElement(m,counter);
-		m->rate = newRate;
-		counter++;
-		groups[newGroupId]->addElement(m, counter);
-
-		//debug code
-		if (!groups[newGroupId]->isInside(m)) {
-			std::cout<<"DID NOT MOVE TO CORRECT GROUP"<<std::endl;
-		}
-		//check(m,newRate);
-		return;
-	}
-
-
-}
-
-void TOG::update(int &counter) {
-	for (auto & group : groups) {
-		tree.updateLeaf(group->node, group->totalR, counter);
-		counter++;
-	}
-	tree.updateTree(counter);
-}
-
-void TOG::addElement(elementTOG *m, int &counter) {
-	if (m->rate == 0) {
-		m->groupId = -1;
-		counter++;
-		return;
-	}
-	int groupId = (int) floor ((log2(m->rate / minR))*logBase);
-	counter++;
-	groups[groupId]->addElement(m, counter);
-	counter++;
-	totalN++;
 }

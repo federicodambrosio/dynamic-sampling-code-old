@@ -1,7 +1,3 @@
-//
-// Created by Federico D'Ambrosio on 01/04/2021.
-//
-
 #include "TwoLevelARB.h"
 #include <iostream>
 
@@ -176,5 +172,5 @@ void TwoLevelARB::updateElement(element2ARB *i, double newRate) {
 unsigned long TwoLevelARB::getGroup(double r) const {
 	if (r == _min) return 0;
 	if (r == _max) return _g - 1;
-	return (unsigned long)std::ceil(std::log(r/_min)*_divBase);
+	return (unsigned long)std::floor(std::log(r/_min)*_divBase);
 }

@@ -1,6 +1,8 @@
 //
-// Created by federicodambrosio on 17-3-17.
-//
+// The class CascadeOfGroups implements both Cascade of Groups and Reverse Cascade of 
+// Groups (see parameter reverse) data structures from the paper.  
+
+
 
 #ifndef STATIC_UPDATE_NESTEDGROUPS_H
 #define STATIC_UPDATE_NESTEDGROUPS_H
@@ -44,25 +46,15 @@ struct singleGroup {
 
 	elementCoG *sampleElement();
 
-	elementCoG *sampleElement(int & counter, int & randNumbers);  //as above but # ops in counter and # iterations in
-																//randNumbers
-	elementCoG *sampleElement(RunningStats & rs);                 //as above but # of iterations in rs
-
 	elementCoG *addElement(elementCoG *it);
-
-	elementCoG *addElement(elementCoG *it, int & counter);         //as above but # ops in counter
 
 	void updateElement(elementCoG *it, double newRate);
 
-	void updateElement(elementCoG *it, double newRate, int & counter); //as above but # ops in counter
-
 	void deleteElement(elementCoG *it);
-
-	void deleteElement(elementCoG *it, int & counter);             //as above but # ops in counter
 
 };
 //cascade from 1 to g
-class CascadeOfGroups {                                     //Section 3.4
+class CascadeOfGroups {                                     
 	int N;                                                  //how many elements in the whole structure
 	double _totalRate;                                      //sum of all rates
 	const double _minRate;
@@ -77,7 +69,8 @@ class CascadeOfGroups {                                     //Section 3.4
 	const double _divBase;                                  // 1/log(_c)
 
 public:
-	CascadeOfGroups(bool rev, double minRate, double maxRate, double ratio = 2.);
+	//if reverse = true, Reversed Cascade of Group 
+	CascadeOfGroups(bool reverse, double minRate, double maxRate, double ratio = 2.);
 
 	~CascadeOfGroups() {
 		for (auto & _group : _groups) {
@@ -87,25 +80,14 @@ public:
 
 	elementCoG* addElement(int payload, double rate);
 
-	elementCoG* addElement(int payload, double rate, int & counter);
-
-	elementCoG *sampleElement(double random);
-
-	elementCoG *sampleElement(double random, int & counter, int & randNumbers);
-
 	elementCoG *sampleElement();
-
-	elementCoG *sampleElement(int & counter, int & randNumbers);
-
-	elementCoG *sampleElement(double random, RunningStats & deep, RunningStats & iter);
 
 	elementCoG *updateElement(elementCoG *it, double newRate);
 
-	elementCoG *updateElement(elementCoG *it, double newRate, int & counter);
-
-	unsigned long getGroup(double r) const;
-
-
+	unsigned long getGroup(double r) const;	//gets group # for event of rate r
+	
+	std::vector<double> rates();			//total rates of all groups
+	
 };
 
 

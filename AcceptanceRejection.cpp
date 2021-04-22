@@ -1,6 +1,3 @@
-//
-// Created by federicodambrosio on 9-3-17.
-//
 
 #include "AcceptanceRejection.h"
 

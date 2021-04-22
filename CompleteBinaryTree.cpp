@@ -164,66 +164,6 @@ std::vector<double> CompleteBinaryTree::getAllRates() {
 	return rates;
 }
 
-void CompleteBinaryTree::updateLeaf(CBTNode *leaf, double r, int &counter) {
-	leaf->rate = r;
-	counter++;
-	touched.push_back(leaf->parent);
-	counter++;
-}
-
-void CompleteBinaryTree::updateTree(int &counter) {
-	int toUpdate = touched.size();       //an arbitrary value just to start
-	counter++;
-
-	while (toUpdate > 0) {  //if there are still node to update
-
-		toUpdate = 0;
-		counter++;
-
-		for (int i = 0; i < touched.size(); i++) {
-			CBTNode *node = touched[i];
-			counter++;
-			updateNode(node);                           //update rate upwards
-			counter++;
-			if (node != root) {                         //if the node is not root, we subs with parent
-				touched[i] = node->parent;              //and count one more node to update
-				counter++;
-				toUpdate++;
-				counter++;
-			} else {
-				touched[i] = root;
-				counter++;
-			}
-
-		}
-	}
-	touched.clear();
-	counter++;
-}
-
-CBTNode *CompleteBinaryTree::sampleLeaf(double random, int &counter) {
-	random = random * root->rate;              //random is now between 0 and totalrate
-	counter++;
-	CBTNode *workingNode = root;                    //starts from root
-	counter++;
-
-	while (!(workingNode->leaf)) {                  //repeat until we get to a leaf
-		//if the random rate is < left rate, goes there
-		if (random < workingNode->left->rate) {
-			workingNode = workingNode->left;
-			counter++;
-		}
-		//otherwise, goes right and subtracts the left rate
-		else {
-			random = random - workingNode->left->rate;
-			counter++;
-			workingNode = workingNode->right;
-			counter++;
-		}
-	}
-	//once we get a leaf, it is extracted
-	return workingNode;
-}
 
 CBTNode *CompleteBinaryTree::sampleLeaf() {
 	double random = randExt->operator()(rng);
@@ -244,35 +184,7 @@ CBTNode *CompleteBinaryTree::sampleLeaf() {
 	return workingNode;
 }
 
-CBTNode *CompleteBinaryTree::sampleLeaf(int &counter) {
-	double random = randExt->operator()(rng);
-	counter++;
-	random = random * root->rate;              //random is now between 0 and totalrate
-	counter++;
-	CBTNode *workingNode = root;                    //starts from root
-	counter++;
 
-	while (!(workingNode->leaf)) {                  //repeat until we get to a leaf
-		counter++;
-		//if the random rate is < left rate, goes there
-		if (random < workingNode->left->rate) {
-			counter++;
-			workingNode = workingNode->left;
-			counter++;
-		}
-			//otherwise, goes right and subtracts the left rate
-		else {
-			counter++;
-			random = random - workingNode->left->rate;
-			counter++;
-			workingNode = workingNode->right;
-			counter++;
-
-		}
-	}
-	//once we get a leaf, it is extracted
-	return workingNode;
-}
 
 void CompleteBinaryTree::print() {
 	auto *next = new std::vector<CBTNode *>;

@@ -1,5 +1,5 @@
 //
-// Created by federicodambrosio on 6-2-17.
+// This implements the Tree of Groups method from the paper.
 //
 
 #ifndef TREE_OF_GROUPS_H
@@ -59,24 +59,6 @@ struct groupTOG {
 		totalN++;
 	}
 
-	void addElement(elementTOG* m, int & counter) {    //as before, but adds number of operations to counter
-		//update total rate of the group
-		totalR = totalR + m->rate;
-		counter++;
-
-		//update Ids in the elementTOG
-		m->elementID = totalN;
-		counter++;
-		m->groupId = groupId;
-		counter++;
-
-		//add the elementTOG to data structure and update total N
-		elements.push_back(m);
-		counter++;
-		totalN++;
-		counter++;
-	}
-
 	void deleteElement(elementTOG* m) {
 		//if it was the only elementTOG in the structure
 		if (totalN == 1 && m->elementID == 0){
@@ -103,51 +85,10 @@ struct groupTOG {
 		totalN--;   //update N
 	}
 
-	void deleteElement(elementTOG* m, int & counter) {         //as before, but adds number of operations to counter
-		//if it was the only elementTOG in the structure
-		if (totalN == 1 && m->elementID == 0){
-			totalN=0;
-			counter++;
-			totalR=0;
-			counter++;
-			elements.pop_back();
-			counter++;
-			return;
-		}
-
-		int elementId = m->elementID; //get the Id
-		counter++;
-
-		//update rates
-		totalR = totalR - m->rate;
-		counter++;
-
-		//delete elementTOG and subs in its place the last in the structure
-		m->rate = 0;
-		if (elementId != totalN - 1) {
-			elements[elementId] = elements[totalN-1];
-			counter++;
-			elements[elementId]->elementID = elementId;
-			counter++;
-		}
-
-		elements.pop_back();
-		counter++;
-
-		totalN--;   //update N
-		counter++;
-	}
 
 	void updateElement(elementTOG *m, double r_) {
 		totalR = totalR + r_ - m->rate;   //update total rate
 		m->rate = r_;                     //update rate of the elementTOG
-	}
-
-	void updateElement(elementTOG *m, double rate, int & counter) {   //as before, but adds number of operations to counter
-		totalR = totalR + rate - m->rate;   //update total rate
-		counter++;
-		m->rate = rate;                     //update rate of the elementTOG
-		counter++;
 	}
 
 	//debug function
@@ -199,8 +140,9 @@ class TOG {                                 //Tree of Groups, Section 3.4
 
 	std::mt19937 rng;
 	std::uniform_real_distribution<double> * randExt;
-public:
 	CompleteBinaryTree tree;                                            //CBT to pick a group
+public:
+
 
 	TOG(double pmax, double pmin, double _k =2 );
 
@@ -209,23 +151,12 @@ public:
 	}
 
 	elementTOG * sampleElement();
-	
-	elementTOG * sampleElement(RunningStats & it);                  //samples and stores # iterations in a RunningStats
-	
-	elementTOG * sampleElement(int & counter, int & randNumbers);   //samples and stores ops in counter and # of rand
-																	//numbers generated in randNumbers
-																	
-	void updateElement(elementTOG * m, double newRate);
 
-	void updateElement(elementTOG * m, double newRate, int & counter);  //stores ops in counter
+	void updateElement(elementTOG * m, double newRate);
 
 	void update();                                                  //if groups have changed tot. rates, update tree
 
-	void update(int & counter);                                     //same but stores ops in counter
-
 	void addElement(elementTOG * m);
-
-	void addElement(elementTOG * m, int & counter);                 //same but stores ops in counter
 
 	elementTOG * addElement(int position, double rate);             //same but generates the element and returns * to it
 	
