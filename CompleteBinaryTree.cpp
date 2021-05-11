@@ -116,11 +116,11 @@ void CompleteBinaryTree::updateTree() {
 			if (node != root) {                         //if the node is not root, we subs it with parent
 				touched[i] = node->parent;              //and count one more node to update
 				toUpdate++;
-			} else touched[i] = root;
+			} 
 
 		}
 	}
-	touched.clear();                                    //empty the touched vector from leftovers
+	touched.clear();       //now it's a vector of pointers to the root, we can erase it
 }
 
 void CompleteBinaryTree::updateNode(CBTNode *node) {       //this updates upward

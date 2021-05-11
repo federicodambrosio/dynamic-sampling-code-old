@@ -1,6 +1,6 @@
 //
 // The class CompleteBinaryTree implements the Complete Binary Tree method from the paper.
-// It is referenced by the TOG (Tree of Groups), TwoLevelARB, CascadeOfGroups classes
+// 
 //
 
 #ifndef ACCEPTANCE_REJECTION
@@ -16,7 +16,6 @@ struct elementAR {
 
 	elementAR() : position(-1), payload(-1), rate(0){}
 	elementAR(int pl, int ps, double r) : payload(pl), position(ps), rate(r){}
-	elementAR(int pl, int ps, double r, int & counter) : payload(pl), position(ps), rate(r){counter+=3;}
 };
 
 class AcceptanceRejection {                                
