@@ -1,78 +1,123 @@
 #include "TOG.h"
-#include "RunningStats.hpp"
 
-TOG::TOG(double pmax, double pmin, double _ratio) : maxR(pmax), minR(pmin), k(_ratio), logBase(1. / log2(_ratio)) {
+void groupTOG::addEvent(eventTOG *m) {
+	//update total rate of the group
+	R += m->rate;
+
+	//update Ids in the eventTOG
+	m->position = N;
+	m->groupId = groupId;
+
+	//add the eventTOG to data structure and update total N
+	events.push_back(m);
+	N++;
+}
+
+void groupTOG::deleteEvent(eventTOG *m) {
+	//if it was the only eventTOG in the structure
+	if (N == 1 && m->position == 0){
+		N=0;
+		R=0;
+		events.pop_back();
+		return;
+	}
+
+	unsigned long eventId = m->position; //get the Id
+
+	//update rates
+	R -= m->rate;
+
+	//delete eventTOG and subs in its place the last in the structure
+	events[eventId] = events[N - 1];
+	events[eventId]->position = eventId;
+
+	events.pop_back();
+	N--;
+}
+
+void groupTOG::updateEvent(eventTOG *m, double r_) {
+	R += r_ - m->rate;   //update total rate
+	m->rate = r_;                     //update rate of the eventTOG
+}
+
+TOG::TOG(double pmax, double pmin, double _ratio) : _max(pmax), _min(pmin), _c(_ratio), _divBase(1. / log(_ratio)){
+	std::random_device randomSeed;
+	//rng.seed(randomSeed());
 	rng.seed(time(nullptr));
-	randExt = new std::uniform_real_distribution<double>(0,1);
 
-	int index = 0;
-	double min = minR;
-	while (min < maxR) {
-		double max = k * min;
-		if (max > maxR) max = maxR;
-		auto * g = new groupTOG(index, max, min, k);       //new group created
-		g->node = tree.addLeaf(index, 0);               //gets its leaf
-		groups.push_back(g);                               //added to group list
+	unsigned long index = 0;
+	double min = _min;
+	while (min < _max) {
+		double max = _c * min;
+		if (max > _max) max = _max;
+
+		//adds group to array, groups is assigned a leaf in the tree
+		groups.emplace_back(index, max, min, _c,tree.addLeaf(index, 0.));
 
 		min = max;                                         //next group starts where this ends
 		index++;
-		nGroups++;
+		_g++;
 	}
 }
 
-void TOG::updateElement(elementTOG * m, double newRate) {
+void TOG::updateEvent(eventTOG * m, double newRate) {
 	if (newRate == m->rate) return;             //if the rates is unchanged, do nothing
 
-	int groupId = m->groupId;                   //what's its current group
+	unsigned long groupId = m->groupId;                   //what's its current group
 
-	if (groupId == -1) {                        //previously impossible elementTOG, it had no group
+	if (groupId == -1) {                        //previously impossible eventTOG, it had no group
 		if (newRate==0) return;                 //still impossible, do nothing
 		m->rate = newRate;
-		addElement(m);                          //added to the structure with its new rate
+		addEvent(m);                          //added to the structure with its new rate
+		
+		update();								//updates the tree
+		
 		return;
 	}
 
-	if (newRate == 0) {                         //previously possible element becomes impossible
-		groups[groupId]->deleteElement(m);      //removed from group
-		totalN--;
+	if (newRate == 0) {                         //previously possible event becomes impossible
+		groups[groupId].deleteEvent(m);      //removed from group
+		N--;
 		m->groupId = - 1;                       //no group
-		m->elementID = -1;
+		m->position = -1;
 		m->rate = 0;
-		tree.updateLeaf(groups[groupId]->node,groups[groupId]->totalR);
+		tree.updateLeaf(groups[groupId].leaf, groups[groupId].R);
+		
+		update();
+		
 		return;
 	}
 
-	if (groups[groupId]->isInside(newRate)) {       //rate changed, but it's still in the same group
-		groups[groupId]->updateElement(m,newRate);  //updates the element inside the group and that's it
-		tree.updateLeaf(groups[groupId]->node,groups[groupId]->totalR);
-		return;
-	}
-
-	if (!groups[groupId]->isInside(newRate)) {      //rate changed, different group now
-		int newGroupId = (int) (floor (log2(newRate / minR) * logBase));
-		groups[groupId]->deleteElement(m);          //delete from previous group
-		tree.updateLeaf(groups[groupId]->node,groups[groupId]->totalR);
+	unsigned long newGroupId = getGroup(newRate);
+	
+	if (groupId == newGroupId) {       //rate changed, but it's still in the same group
+		groups[groupId].updateEvent(m,newRate);  //updates the event inside the group and that's it
+		tree.updateLeaf(groups[groupId].leaf, groups[groupId].R);
+		update();
+		return;										//updates the tree
+	} else {      //rate changed, different group now
+		groups[groupId].deleteEvent(m);          //delete from previous group
+		tree.updateLeaf(groups[groupId].leaf, groups[groupId].R);
 		m->rate = newRate;
-		groups[newGroupId]->addElement(m);          //add to new group
-		tree.updateLeaf(groups[newGroupId]->node,groups[newGroupId]->totalR);
+		groups[newGroupId].addEvent(m);          //add to new group
+		tree.updateLeaf(groups[newGroupId].leaf, groups[newGroupId].R);
+		
+		update();									//updates the tree
 
 		return;
 	}
 }
 
-elementTOG *TOG::sampleElement() {
+eventTOG *TOG::sampleEvent() {
 	while(true){
-		double r2 = randExt->operator()(rng);
-		CBTNode * extractedNode = tree.sampleLeaf(r2);      //samples group from CBT
-		int groupId = extractedNode->payload;
-		int iteration=0;
+		CBTNode * extractedNode = tree.sampleLeaf();      //samples group from CBT
+		unsigned long groupId = extractedNode->payload;
 		while (true){                                       //Acceptance Rejection on that group
-			double r3 = randExt->operator()(rng) * (groups[groupId]->totalN-1);
-			int elementId =(int)std::floor(r3);
-			double randElement = (r3 - (double)elementId) * groups[groupId]->maxR;
-			iteration++;
-			if (groups[groupId]->elements[elementId]->rate >= randElement ) {
-				return groups[groupId]->elements[elementId];
+			double rand = randExt(rng) * (double)groups[groupId].N;
+			unsigned long eventId =(int)std::floor(rand);
+			double randEvent = (rand - (double)eventId) * groups[groupId].maxR;
+			if (groups[groupId].events[eventId]->rate >= randEvent ) {
+				return groups[groupId].events[eventId];
 			}
 		}
 	}
@@ -83,50 +128,29 @@ void TOG::update() {            //updates the tree connected to the structure
 }
 
 
-void TOG::addElement(elementTOG * m) {
+void TOG::addEvent(eventTOG * m) {
 	if (m->rate == 0) {
 		m->groupId = -1;
 		return;
 	}
-	int groupId = (int) floor ((log2(m->rate / minR))*logBase); //which group it's going to end in
-	groups[groupId]->addElement(m);
-	tree.updateLeaf(groups[groupId]->node,groups[groupId]->totalR);
-	totalN++;
-}
-
-bool TOG::checkGroups(){        //debug
-	bool check=true;
-	for (int i=0; i<groups.size();i++) {
-		if (!groups[i]->checkGroup()){
-			std::cout<<"Problem with group "<<i<<std::endl;
-			check = false;
-		}
-	};
-	std::vector<double> rrr = tree.getAllRates();
-	for (int i=0; i<groups.size();i++) {
-		if(groups[i]->totalR != rrr[groups[i]->groupId]){
-			if ((groups[i]->totalR - rrr[groups[i]->groupId]) / groups[i]->totalR > 1e-6) {
-				std::cout<<i<<"\t"<<groups[i]->totalR<<"\t"<<groups[i]->totalR - rrr[groups[i]->groupId]<<std::endl;
-				check = false;
-			}
-		}
-	}
-
-	return check;
-}
-
-void TOG::printGroups() {                               //print groups to stdout
-	for (int g=0; g<groups.size();g++){
-		std::cout<<"Group "<<g<<": "<<std::endl;
-		for (int m=0;m<groups[g]->totalN;m++)
-			std::cout << groups[g]->elements[m]->payload << "\t";
-		std::cout<<std::endl;
-	}
+	unsigned long groupId = getGroup(m->rate);
+	groups[groupId].addEvent(m);
+	tree.updateLeaf(groups[groupId].leaf, groups[groupId].R);
+	
+	update(); //updates the tree
+	N++;
 }
 
 
-elementTOG* TOG::addElement(int position, double rate) {
-	auto * m= new elementTOG(position, rate);
-	addElement(m);
+eventTOG* TOG::addEvent(unsigned long payload, double rate) {
+	auto * m= new eventTOG(payload, rate);
+	addEvent(m);
 	return m;
 }
+
+unsigned long TOG::getGroup(double r) const {
+	if (r == _min) return 0;
+	if (r == _max) return _g - 1;
+	return (unsigned long)std::floor(std::log(r/_min)*_divBase);
+}
+

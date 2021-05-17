@@ -9,14 +9,15 @@
 #include <iostream>
 #include <random>
 #include <vector>
+#include <queue>
 
 //each node in the tree is a CBTNode object
 struct CBTNode {
-	unsigned long payload;
+	long payload;
 
 	double rate;
 
-	bool leaf;          //is this a leaf?
+	bool leaf;          //true if leaf, false if internal node
 
 	//tree structure
 	CBTNode *parent = nullptr;
@@ -24,65 +25,82 @@ struct CBTNode {
 	CBTNode *right = nullptr;
 	unsigned long mass;           //how many leaves under this node
 
-	CBTNode() {         //generates internal node (payload doesn't matter for them)
+	//generates internal node (payload doesn't matter for them)
+	CBTNode() {         
 		rate = 0;
 		payload = -1;
 		leaf = false;
 		mass = 0;
 	};
-
-	CBTNode(unsigned long pl, double r) { //generates leaf
+	
+	//generates leaf (needs a payload and a rate)
+	CBTNode(unsigned long pl, double r) { 
 		rate = r;
 		payload = pl;
 		leaf = true;
 		mass = 1;
 	}
-
-	~CBTNode() {                //recursively deletes the tree
+	
+	//deletes the node and its children (no orphans)
+	~CBTNode() {                
 		delete left;
 		delete right;
 	}
 };
 
 
-class CompleteBinaryTree {          
-	std::vector<CBTNode*>  nodes;   //here the pointers to all of the nodes are stored for debug and easy access
-									//but not normally accessed
+class CompleteBinaryTree {
+	//all nodes are stored in this vector for debug but not normally accessed from it          
+	std::vector<CBTNode*>  nodes;   
+									
 	CBTNode *root;                  //the root of the tree
-	std::vector<CBTNode*> touched; //nodes "touched" since the last tree update
-
-	static void updateNode(CBTNode *node); //private method for update a node
-
-	int Nleafs=0;                   //number of leafs
-
-	std::mt19937 rng;
-	std::uniform_real_distribution<double> * randExt;
-
-public:
-	CompleteBinaryTree();
-
-	~CompleteBinaryTree();
-
-	CBTNode *addLeaf(unsigned long pl, double r);  //adds a new leaf, with given payload and rate
-
-	void addLeaf(CBTNode *node);        //adds a previously created leaf
-
-	void updateLeaf(CBTNode *leaf, double r);   //update a leaf, requires updateTree
-
-	CBTNode *sampleLeaf();                                //samples leaf
 	
-	CBTNode *sampleLeaf(double random);                    //samples with a given random number (b.w. 0 and 1)
+	//nodes that have been edited since last updateTree 
+	std::queue<CBTNode*> touched; 
 
-	void updateTree();                  //update the whole tree. has to be invoked after updating leafs before extracting
+	//updates mass and rate of a node for internal consistency
+	static void updateNode(CBTNode *node);
 
+	unsigned long Nleafs=0;                   //number of leafs (== events)
 
-	double getRate() { return root->rate; };   //outputs sum of all rates, which is, by definition, the rate of the root
+	//random number generator + uniform real distribution between 0 and 1
+	std::mt19937 rng;			
+	std::uniform_real_distribution<double> randExt;
+	
+	
+public:	
+	//creates empty tree with only root
+	CompleteBinaryTree();
+	
+	//deletes the tree and all of its nodes
+	~CompleteBinaryTree();
+	
+	//adds a new leaf, with given payload and rate. 
+	CBTNode *addLeaf(unsigned long pl, double r);  
 
-	std::vector<double> getAllRates();         //outputs all rates
+	//adds a CBTNode as a leaf. Requires an updateTree.
+	void addLeaf(CBTNode *node);        
+	
+	//updates the rate of a leaf to r. Requires an updateTree.
+	void updateLeaf(CBTNode *leaf, double r);   
+	
+	//samples a leaf according to its rate 
+	CBTNode *sampleLeaf();                                                   
 
-	int getMass() { return root->mass;}         //outputs all mass
+	//updates mass and rate from the "touched" nodes to the root
+	void updateTree();                 
 
-	void print();                               //prints the tree to stdout
+	//returns sum of all rates, which is, by definition, the rate of the root
+	double getRate() { return root->rate; };   
+	
+	//returns a vector of the rates of the leaves
+	std::vector<double> getAllRates();                
+	
+	//returns number of nodes in tree
+	unsigned long numberNodes(){return nodes.size();}
+	
+	//returns number of events in structure
+	unsigned long N(){return Nleafs;}
 };
 
 #endif //COMPLETE_BINARY_TREE_H

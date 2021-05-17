@@ -6,7 +6,6 @@
 
 CompleteBinaryTree::CompleteBinaryTree() {
 	rng.seed(time(nullptr));
-	randExt = new std::uniform_real_distribution<double>(0, 1);
 	root = nullptr;
 }
 
@@ -15,130 +14,74 @@ CompleteBinaryTree::~CompleteBinaryTree() {
 }
 
 void CompleteBinaryTree::addLeaf(CBTNode *node) {
-	Nleafs++;
-	if (root == nullptr) {             //if there is no root, it creates one
-		root = new CBTNode();
-		root->parent = nullptr;        //the root has no parents
-		root->mass = 0;
-		nodes.push_back(root);
+	if (!node->leaf){
+		std::cout << "Err. Not a leaf."<<std::endl;
+		return;
 	}
-
+	Nleafs++;
 	nodes.push_back(node);
 
-	//starting from root, we go down until we find the correct spot where to put the new node
-	CBTNode *workingNode = root;
-
-	while (true) {
-		if (workingNode->left == nullptr) {    //if there is no left node, new node is right node
-			workingNode->left = node;
-			node->parent = workingNode;
-			touched.push_back(node);
-			updateTree();
-
-			return;
-		} else if (workingNode->right == nullptr) {    //if there is no right node, new node is right node
-			workingNode->right = node;
-			node->parent = workingNode;
-			touched.push_back(node);
-			updateTree();
-			return;
-		} else if (workingNode->left->leaf) {       //if the left node is a leaf, adds a new internal node and puts both
-			//under it
-			CBTNode *leftLeaf = workingNode->left;
-			workingNode->left = new CBTNode();
-			workingNode->left->parent = leftLeaf->parent;
-			nodes.push_back(workingNode->left);
-			workingNode->left->left = leftLeaf;
-			leftLeaf->parent = workingNode->left;
-			workingNode->left->right = node;
-			node->parent = workingNode->left;
-			touched.push_back(node);
-			touched.push_back(leftLeaf);
-			updateTree();
-
-			return;
-		} else if (workingNode->right->leaf) {      //as before, but with right node
-			CBTNode *leftLeaf = workingNode->right;
-			workingNode->right = new CBTNode();
-			workingNode->right->parent = leftLeaf->parent;
-			nodes.push_back(workingNode->right);
-			workingNode->right->left = leftLeaf;
-			leftLeaf->parent = workingNode->right;
-			workingNode->right->right = node;
-			node->parent = workingNode->right;
-			touched.push_back(node);
-			touched.push_back(leftLeaf);
-			updateTree();
-
-			return;
-		} else if (workingNode->left->mass >
-		           workingNode->right->mass) {//otherwise selects the direction with less "mass" and
-			//repeats cycle
-			workingNode = workingNode->right;
-		} else {
-			workingNode = workingNode->left;
-		}
-
+	//if there is no root, it places the node as root
+	if (root == nullptr){
+		root = node;                //no update necessary
+		return;
 	}
 
-}
+	CBTNode * current = root;
+	bool lastMoveLeft;              //is current a left or right child?
 
-
-CBTNode *CompleteBinaryTree::sampleLeaf(double random) {
-	random = random * root->rate;              //random is now between 0 and totalrate
-	while (true) {                                      //repeats until it extract a node
-		CBTNode *workingNode = root;
-
-		while (!(workingNode->leaf)) {                  //repeat until we get to a leaf
-			//if the random rate is < left rate, goes there
-			if (random < workingNode->left->rate) workingNode = workingNode->left;
-				//otherwise, goes right and subtracts the left rate
-			else {
-				random = random - workingNode->left->rate;
-				workingNode = workingNode->right;
-			}
+	while (!current->leaf){
+		//if there is more mass on the left, go right
+		if (current->left->mass > current->right->mass) {
+			current = current->right;
+			lastMoveLeft = false;
 		}
-		//once we get a leaf, it is sampled
-		return workingNode;
+		else {
+			current = current->left;
+			lastMoveLeft = true;
+		}
 	}
+
+	//the leaf is replaced with an internal node with children current and node
+	CBTNode * internal = new CBTNode();
+	//replaces internal as child of the parent of current (root has no parents)
+	if (current != root){
+		internal->parent = current->parent;
+		if (lastMoveLeft) internal->parent->left = internal;
+		else internal->parent->right = internal;
+	} else {
+		//if the internal node replaces root, becomes root
+		root = internal;
+	}
+	//sets the internal node as parent of current and node
+	current->parent = internal;
+	node->parent = internal;
+	internal->left = current;
+	internal->right = node;
+
+	//internal and node have common parent, we only need to update from their parent (update does not affect leaves)
+	touched.push(internal);
+	//update performed immediately
+	updateTree();
 }
+
 
 void CompleteBinaryTree::updateTree() {
-	int toUpdate = touched.size();
-
-	while (toUpdate > 0) {  //if there are still nodes to update
-
-		toUpdate = 0;
-
-		for (int i = 0; i < touched.size(); i++) {
-			CBTNode *node = touched[i];
-			updateNode(node);                           //update rate upwards
-			if (node != root) {                         //if the node is not root, we subs it with parent
-				touched[i] = node->parent;              //and count one more node to update
-				toUpdate++;
-			} 
-
+	while (!touched.empty()){
+		auto currNode = touched.front();
+		updateNode(currNode);
+		touched.pop();
+		if (currNode != root){              //root has no parent
+			touched.push(currNode->parent);
 		}
 	}
-	touched.clear();       //now it's a vector of pointers to the root, we can erase it
 }
 
-void CompleteBinaryTree::updateNode(CBTNode *node) {       //this updates upward
-	if (node->leaf) {
-		node->mass = 1;     //if it's a leaf, mass is 1
-	} else {                //otherwise mass = left.mass+right.mass, rate = left.rate + right.rate
-		double rate = 0;
-		int mass = 0;
-		if (node->left != nullptr) {
-			rate += node->left->rate;
-			mass += node->left->mass;
-		}
-		if (node->right != nullptr) {
-			rate += node->right->rate;
-			mass += node->right->mass;
-		}
-		node->rate = rate;
-		node->mass = mass;
+void CompleteBinaryTree::updateNode(CBTNode *node) {
+	//only internal nodes require update for consistency
+	if (!node->leaf){
+		node->rate = node->right->rate + node->left->rate;
+		node->mass = node->right->mass + node->left->mass;
 	}
 }
 
@@ -150,26 +93,14 @@ CBTNode *CompleteBinaryTree::addLeaf(unsigned long pl, double r) {
 
 void CompleteBinaryTree::updateLeaf(CBTNode *leaf, double r) {
 	leaf->rate = r;
-	touched.push_back(leaf->parent);
+	touched.push(leaf->parent);
 }
-
-std::vector<double> CompleteBinaryTree::getAllRates() {
-	std::vector<double> rates(Nleafs, 0.);
-	for (auto &node : nodes) {
-		if (node->leaf) {
-			rates[node->payload] = node->rate;
-		}
-	}
-
-	return rates;
-}
-
 
 CBTNode *CompleteBinaryTree::sampleLeaf() {
-	double random = randExt->operator()(rng);
-	random = random * root->rate;              //random is now between 0 and totalrate
+	double random = randExt(rng) * root->rate;  //random number between 0 and total rate
+	unsigned long depth = 0;
 
-	CBTNode *workingNode = this->root;                    //starts from root
+	CBTNode *workingNode = root;                    //starts from root
 
 	while (!(workingNode->leaf)) {                  //repeat until we get to a leaf
 		//if the random rate is < left rate, goes there
@@ -179,33 +110,10 @@ CBTNode *CompleteBinaryTree::sampleLeaf() {
 			random = random - workingNode->left->rate;
 			workingNode = workingNode->right;
 		}
+		depth++;
 	}
-	//once we get a leaf, if the rate is > 0, it is extracted
+	//once we get a leaf, it is sampled	
 	return workingNode;
 }
 
 
-
-void CompleteBinaryTree::print() {
-	auto *next = new std::vector<CBTNode *>;
-	next->push_back(root);
-	int level = 0;
-	while (!next->empty()) {
-		auto *future = new std::vector<CBTNode *>;
-		std::cout << "Level " << level << ": ";
-		for (auto & i : *next) {
-			if (i->leaf) {
-				std::cout << "L\t";
-			}
-			if (!i->leaf) {
-				std::cout << i->mass << "\t";
-				future->push_back(i->left);
-				future->push_back(i->right);
-			}
-		}
-		std::cout << std::endl;
-		level++;
-		delete next;
-		next = future;
-	}
-}
