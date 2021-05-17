@@ -70,7 +70,7 @@ struct singleGroup {
 //_reversed == true : Reversed Cascade of Groups
 
 class CascadeOfGroups {                                     
-	int N;                                	//how many events in the whole structure
+	unsigned long N;                  	//how many events in the whole structure
 	double R;                    	//sum of all rates
 	const double _minRate;					//minimum rate for this structure
 	const double _maxRate;					//maximum rate for this structure
